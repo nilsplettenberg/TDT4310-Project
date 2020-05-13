@@ -11,6 +11,7 @@ import os
 import re
 
 from preprocess import embed_words, zero_pad
+from utils import to_cuda
 
 np.random.seed(0)
 
@@ -81,26 +82,26 @@ def loadData(path = 'data/pan19-author-profiling-20200229/training/en/'):
 
     return x,y
 
-def load_data(batch_size: int, validation_fraction: float = 0.1, input_size: int = 32, dimension: int = 3
+def load_data(batch_size: int, validation_fraction: float = 0.1, dimensions: int = 25
                  ) -> typing.List[torch.utils.data.DataLoader]:
 
     x_train, y_train = loadData("data/pan19-author-profiling-20200229/training/en/")
     x_test, y_test = loadData("data/pan19-author-profiling-20200229/test/en/")
 
     # embedd words using glove matrix
-    x_train = embed_words(x_train[:1000])
-    x_test = embed_words(x_test[:1000])
+    x_train = embed_words(x_train,dimensions)
+    x_test = embed_words(x_test, dimensions)
     # remove too short and too long sequences, padd with zeros 
-    x_train = zero_pad(x_train,y_train)
-    x_test = zero_pad(x_test,y_test)
+    x_train,y_train = zero_pad(x_train,y_train)
+    x_test, y_test = zero_pad(x_test,y_test)
 
     # data_train = Dataset(x_train, y_train)
     # data_test = Dataset(x_test, y_test)
-    # # convert to torch tensor
+    # # convert to torch tensor and transfer to gpu if possible
     x_train = torch.tensor(x_train, dtype=torch.float)
-    y_train = F.one_hot(torch.tensor(y_train[:len(x_train)]))
-    x_test = torch.tensor(x_test, dtype=torch.float)
-    y_test = F.one_hot(torch.tensor(y_test[:len(x_test)]))
+    y_train = torch.tensor(y_train)
+    x_test  = torch.tensor(x_test, dtype=torch.float)
+    y_test  = torch.tensor(y_test)
 
 
     data_train = data.TensorDataset(x_train, y_train)

@@ -60,7 +60,7 @@ def tweet_tokenization(tweet):
         r'(?:\S)' #anything else
     ]
     tokens_re = re.compile(r'('+'|'.join(regex_str)+ ')', re.VERBOSE | re.IGNORECASE)
-    stop_word = set(stopwords.words('english'))
+    # stop_word = set(stopwords.words('english'))
     word_tokens = tokens_re.findall(tagged)
 
 
@@ -119,11 +119,11 @@ def zero_pad(embedded_words, labels):
     print("Stats for sequence lengths: min=%i, max=%i, mean=%i, median=%i, std=%i" % (min_len, max_len, mean, median, std))
     dim = len(embedded_words[0][0])
     padded = []
+    labels_new = []
     for idx, seq in enumerate(embedded_words):
-        if len(seq) < median - std  or len(seq) > median + std:
-            del labels[idx]
-        else:
+        if not( len(seq) < median - std  or len(seq) > median + std):
             for i in range(int(median) + int(std)-len(seq)):
                 seq.append(np.zeros(dim))
             padded.append(seq)
-    return padded
+            labels_new.append(labels[idx])
+    return padded, labels_new

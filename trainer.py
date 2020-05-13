@@ -61,6 +61,7 @@ class Trainer:
                  epochs: int,
                  model: torch.nn.Module,
                  datasets,
+                 loss_criterion: torch.nn.modules.loss._Loss = nn.CrossEntropyLoss(),
                  optimizer= None):
         """
             Initialize our trainer class.
@@ -71,11 +72,11 @@ class Trainer:
         self.epochs = epochs
 
         # Since we are doing multi-class classification, we use CrossEntropyLoss
-        self.loss_criterion = nn.CrossEntropyLoss()
+        self.loss_criterion = loss_criterion
         # Initialize the model
         self.model = model
         # Transfer model to GPU VRAM, if possible.
-        # self.model = utils.to_cuda(self.model)
+        self.model = utils.to_cuda(self.model)
         print(self.model)
 
         # Define our optimizer. SGD = Stochastich Gradient Descent
@@ -158,8 +159,6 @@ class Trainer:
             self.epoch = epoch
             # Perform a full pass through all the training samples
             for X_batch, Y_batch in self.dataloader_train:
-                # X_batch is the CIFAR10 images. Shape: [batch_size, 3, 32, 32]
-                # Y_batch is the CIFAR10 image label. Shape: [batch_size]
                 # Transfer images / labels to GPU VRAM, if possible
                 X_batch = utils.to_cuda(X_batch)
                 Y_batch = utils.to_cuda(Y_batch)
@@ -222,3 +221,22 @@ class Trainer:
         print(f"Final Training Loss: {train_loss:.2f}", f"Final Training accuracy: {train_acc:.3f}", sep="\t")
         print(f"Final Validation Loss: {validation_loss:.2f}", f"Final Validation accuracy: {validation_acc:.3f}", sep="\t")
         print(f"Final Test Loss: {test_loss:.2f}", f"Final Test accuracy: {test_acc:.3f}", sep="\t")
+
+def create_plots(trainer: Trainer, name: str):
+    plot_path = pathlib.Path("plots")
+    plot_path.mkdir(exist_ok=True)
+    # Save plots and show them
+    plt.figure(figsize=(20, 8))
+    plt.subplot(1, 2, 1)
+    plt.title("Cross Entropy Loss")
+    utils.plot_loss(trainer.TRAIN_LOSS, label="Training loss")
+    utils.plot_loss(trainer.VALIDATION_LOSS, label="Validation loss")
+    utils.plot_loss(trainer.TEST_LOSS, label="Testing Loss")
+    plt.legend()
+    plt.subplot(1, 2, 2)
+    plt.title("Accuracy")
+    utils.plot_loss(trainer.VALIDATION_ACC, label="Validation Accuracy")
+    utils.plot_loss(trainer.TEST_ACC, label="Testing Accuracy")
+    plt.legend()
+    plt.savefig(plot_path.joinpath(f"{name}_plot.png"))
+    plt.show()

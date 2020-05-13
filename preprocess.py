@@ -3,6 +3,8 @@ import requests
 import zipfile
 import pathlib
 import nltk
+import os
+import sys
 import numpy as np
 from nltk.corpus import stopwords
 # from gensim.models import Word2Vec
@@ -13,17 +15,30 @@ def download_glove():
     ''''
         Downloads and unzips the Glove Twitter word embeddings
     '''
-    print('Beginning file download with requests')
+    pathlib.Path("data/glove").mkdir(parents=True, exist_ok=True)
     url = 'http://nlp.stanford.edu/data/glove.twitter.27B.zip'
-    r = requests.get(url)
-    with open('data/glove.twitter.27B.zip', 'wb') as f:
-        f.write(r.content)
+    file_name = 'data/glove.twitter.27B.zip'
+    with open(file_name, "wb") as f:
+        print("Downloading %s" % (file_name))
+        response = requests.get(url, stream=True)
+        total_length = response.headers.get('content-length')
+
+        if total_length is None: # no content length header
+            f.write(response.content)
+        else:
+            dl = 0
+            total_length = int(total_length)
+            for data in response.iter_content(chunk_size=4096):
+                dl += len(data)
+                f.write(data)
+                done = int(50 * dl / total_length)
+                sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )    
+                sys.stdout.flush()
     
     #unzip
-    pathlib.Path("/data/glove").mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile('data/glove.twitter.27B.zip', 'r') as zip_ref:
         zip_ref.extractall('data/glove')
-    
+    os.remove("data/glove.twitter.27B.zip")
 
 
 def tweet_tokenization(tweet):
@@ -58,8 +73,12 @@ def tweet_tokenization(tweet):
 # load pretrained word embeddings for GloVe
 # glove source: https://nlp.stanford.edu/projects/glove/
 def loadGlove(dim=25):
+    filename = "data/glove/glove.twitter.27B."+str(dim)+"d.txt"
+    # download glove file if they don't exist
+    if not pathlib.Path(filename).is_file():
+        download_glove()
     glove_dict = {}
-    with open ("data/glove/glove.twitter.27B."+str(dim)+"d.txt",  encoding="utf8") as f:
+    with open (filename,  encoding="utf8") as f:
         for line in f:
             word = line.split()[0]
             vec = [float(val) for val in line.split()[1:]]

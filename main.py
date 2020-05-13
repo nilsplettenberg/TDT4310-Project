@@ -29,6 +29,7 @@ device = torch.device("cuda" if USE_CUDA else "cpu")
 
 # train_dataset = data.TensorDataset(x_train, y_train)
 # test_dataset = data.TensorDataset(x_test)
+<<<<<<< HEAD
 if __name__ == "__main__":
     epochs = 10
     batch_size = 64
@@ -45,3 +46,21 @@ if __name__ == "__main__":
             dataloaders
         )
     trainer.train()
+=======
+epochs = 10
+batch_size = 64
+learning_rate = 5e-2
+early_stop_count = 4
+dataloaders = load_data(batch_size)
+model = Test_model(25,3)
+trainer = Trainer(
+        batch_size,
+        learning_rate,
+        early_stop_count,
+        epochs,
+        model,
+        dataloaders
+    )
+trainer.train()
+pass
+>>>>>>> fcff7a45a2c8fcfeeae948ab0248044eb8ffa3bc

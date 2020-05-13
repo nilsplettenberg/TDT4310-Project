@@ -97,15 +97,9 @@ def load_data(batch_size: int, validation_fraction: float = 0.1, input_size: int
     # data_train = Dataset(x_train, y_train)
     # data_test = Dataset(x_test, y_test)
     # # convert to torch tensor
-<<<<<<< HEAD
     x_train = torch.tensor(x_train, dtype=torch.float)
     y_train = F.one_hot(torch.tensor(y_train[:len(x_train)]))
     x_test = torch.tensor(x_test, dtype=torch.float)
-=======
-    x_train = torch.tensor(x_train)
-    y_train = F.one_hot(torch.tensor(y_train[:len(x_train)]))
-    x_test = torch.tensor(x_test)
->>>>>>> fcff7a45a2c8fcfeeae948ab0248044eb8ffa3bc
     y_test = F.one_hot(torch.tensor(y_test[:len(x_test)]))
 
 

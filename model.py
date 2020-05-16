@@ -6,7 +6,7 @@ class Test_model(nn.Module):
     def __init__(self, input_dim, classes, lstm_units=100):
         super(Test_model, self).__init__()
 
-        self.lstm =  nn.LSTM(input_dim, lstm_units, num_layers=1, bidirectional=True, batch_first=True)
+        self.lstm =  nn.LSTM(input_dim, lstm_units, num_layers=3, bidirectional=True, batch_first=True)
         self.fc = nn.Sequential(
             nn.Linear(lstm_units*2, classes),
             nn.Softmax(dim=1)

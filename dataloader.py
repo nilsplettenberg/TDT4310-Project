@@ -36,7 +36,7 @@ np.random.seed(0)
 
 #         return X, y
 
-def loadData(path = 'data/pan19-author-profiling-20200229/training/en/'):
+def load_data(path = 'data/pan19-author-profiling-20200229/training/en/'):
     '''
     Reads tweets and truth from the given path. Returns a list of lists with tweets of a users 
     and a list of the gender of the corresponding user (labels)
@@ -82,18 +82,10 @@ def loadData(path = 'data/pan19-author-profiling-20200229/training/en/'):
 
     return x,y
 
-def load_data(batch_size: int, validation_fraction: float = 0.1, dimensions: int = 25
+def get_data_loader(datasets, batch_size: int, validation_fraction: float = 0.1, dimensions: int = 25
                  ) -> typing.List[torch.utils.data.DataLoader]:
 
-    x_train, y_train = loadData("data/pan19-author-profiling-20200229/training/en/")
-    x_test, y_test = loadData("data/pan19-author-profiling-20200229/test/en/")
-
-    # embedd words using glove matrix
-    x_train = embed_words(x_train,dimensions)
-    x_test = embed_words(x_test, dimensions)
-    # remove too short and too long sequences, padd with zeros 
-    x_train,y_train = zero_pad(x_train,y_train)
-    x_test, y_test = zero_pad(x_test,y_test)
+    x_train, y_train, x_test, y_test = datasets
 
     # data_train = Dataset(x_train, y_train)
     # data_test = Dataset(x_test, y_test)
@@ -120,18 +112,18 @@ def load_data(batch_size: int, validation_fraction: float = 0.1, dimensions: int
     dataloader_train = torch.utils.data.DataLoader(data_train,
                                                    sampler=train_sampler,
                                                    batch_size=batch_size,
-                                                   num_workers=2,
+                                                   num_workers=1,
                                                    drop_last=True)
 
     dataloader_val = torch.utils.data.DataLoader(data_train,
                                                  sampler=validation_sampler,
                                                  batch_size=batch_size,
-                                                 num_workers=2)
+                                                 num_workers=1)
 
     dataloader_test = torch.utils.data.DataLoader(data_test,
                                                   batch_size=batch_size,
                                                   shuffle=False,
-                                                  num_workers=2)
+                                                  num_workers=1)
 
     return dataloader_train, dataloader_test, dataloader_val
     

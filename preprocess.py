@@ -126,4 +126,12 @@ def zero_pad(embedded_words, labels):
                 seq.append(np.zeros(dim))
             padded.append(seq)
             labels_new.append(labels[idx])
+    print("Original length:%d trimmed length:%d" % (len(embedded_words), len(padded)))
     return padded, labels_new
+
+def preprocess(x, y, dimensions):
+    # embedd words using glove matrix
+    x= embed_words(x,dimensions)
+    # remove too short and too long sequences, padd with zeros 
+    x,y = zero_pad(x,y)
+    return x,y

@@ -36,7 +36,7 @@ np.random.seed(0)
 
 #         return X, y
 
-def load_data(path = 'data/pan19-author-profiling-20200229/training/en/'):
+def load_data(path = 'data/pan19-author-profiling-20200229/training/en/', num_classes=3):
     '''
     Reads tweets and truth from the given path. Returns a list of lists with tweets of a users 
     and a list of the gender of the corresponding user (labels)
@@ -74,7 +74,10 @@ def load_data(path = 'data/pan19-author-profiling-20200229/training/en/'):
     x, y =([] for i in range(2))
 
     # torch needs integer as output class
-    class_lables = {"bot":0, "female":1, "male":2}
+    if num_classes==3:
+        class_lables = {"bot":0, "female":1, "male":2}
+    else:
+        class_lables = {"bot":0, "female":1, "male":1}
 
     for key, value in tweets.items():
         x.append(value)
@@ -90,9 +93,9 @@ def get_data_loader(datasets, batch_size: int, validation_fraction: float = 0.1,
     # data_train = Dataset(x_train, y_train)
     # data_test = Dataset(x_test, y_test)
     # # convert to torch tensor and transfer to gpu if possible
-    x_train = torch.tensor(x_train, dtype=torch.float)
+    x_train = torch.tensor(x_train, dtype=torch.long)
     y_train = torch.tensor(y_train)
-    x_test  = torch.tensor(x_test, dtype=torch.float)
+    x_test  = torch.tensor(x_test, dtype=torch.long)
     y_test  = torch.tensor(y_test)
 
 

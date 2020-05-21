@@ -41,7 +41,7 @@ def download_glove():
     os.remove("data/glove.twitter.27B.zip")
 
 
-def tweet_tokenization(tweet):
+def tweet_tokenization(tweet, remove_stopwords = False):
     # tag special expressions
     tagged = re.sub(r'(?:@[\w_]+)', "<USER>", tweet) # @-mentions
     tagged = re.sub(r'(?:\#+[\w_]+[\w\'_\-]*[\w_]+)', "<HASHTAG>", tagged) # hash-tags
@@ -60,13 +60,15 @@ def tweet_tokenization(tweet):
         r'(?:\S)' #anything else
     ]
     tokens_re = re.compile(r'('+'|'.join(regex_str)+ ')', re.VERBOSE | re.IGNORECASE)
-    # stop_word = set(stopwords.words('english'))
+    stop_word = set(stopwords.words('english'))
     word_tokens = tokens_re.findall(tagged)
 
 
     # remove stopwords and punctuation
-    # return [w.lower() for w in word_tokens if (w.isalpha() or w[0]=="<") and len(w) > 1 and not w.lower() in stop_word and w != "RT"]
-    return word_tokens
+    if remove_stopwords:
+        return [w.lower() for w in word_tokens if (w.isalpha() or w[0]=="<") and len(w) > 1 and not w.lower() in stop_word and w != "RT"]
+    else:
+        return word_tokens
 
 # https://radimrehurek.com/gensim/models/word2vec.html
 
@@ -117,21 +119,59 @@ def zero_pad(embedded_words, labels):
     mean = np.mean(lengths)
     std = np.std(lengths)
     print("Stats for sequence lengths: min=%i, max=%i, mean=%i, median=%i, std=%i" % (min_len, max_len, mean, median, std))
-    dim = len(embedded_words[0][0])
+    try:
+        dim = len(embedded_words[0][0])
+    except TypeError:
+        dim = 1
     padded = []
     labels_new = []
     for idx, seq in enumerate(embedded_words):
         if not( len(seq) < median - std  or len(seq) > median + std):
             for i in range(int(median) + int(std)-len(seq)):
-                seq.append(np.zeros(dim))
+                if dim ==1:
+                    seq.append(0)
+                else:
+                    seq.append(np.zeros(dim))
             padded.append(seq)
             labels_new.append(labels[idx])
-    print("Original length:%d trimmed length:%d" % (len(embedded_words), len(padded)))
+    print("Original length:%d, trimmed length:%d" % (len(embedded_words), len(padded)))
     return padded, labels_new
 
-def preprocess(x, y, dimensions):
-    # embedd words using glove matrix
-    x= embed_words(x,dimensions)
+def get_word_to_ix(user_tweets, word_to_ix={}):
+    for tweets in user_tweets:
+        for tweet in tweets:
+            tokens = tweet_tokenization(tweet, True)
+            for token in tokens:
+                if token not in word_to_ix:
+                    word_to_ix[token] = len(word_to_ix)+1
+    return word_to_ix
+
+def prepare_sequence(user_tweets, word_to_ix={}):
+    # list of all sequences
+    sequences = []
+    # iterate over all users 
+    for tweets in user_tweets:
+        # iterate over all tweets per user
+        # one sequence contains all tweets of a user
+        seq = [] 
+        for tweet in tweets:
+            tokens = tweet_tokenization(tweet, True)
+            for token in tokens:
+                if token not in word_to_ix:
+                    word_to_ix[token] = len(word_to_ix)+1
+                seq.append(word_to_ix[token])
+        sequences.append(seq)
+    return sequences, word_to_ix
+
+def preprocess(x, y, dimensions, glove = True):
+    if glove:
+        # embedd words using glove matrix
+        x= embed_words(x,dimensions)
+    else:
+        # TODO add words from test set
+        word_to_ix = get_word_to_ix(x)
+        x = prepare_sequence(x, word_to_ix)
+    
     # remove too short and too long sequences, padd with zeros 
     x,y = zero_pad(x,y)
     return x,y

@@ -8,4 +8,4 @@ the words are tokenize and embedded via Global Vector word representation using 
 ## Model 
 Following the approach of [this paper by Wei and Nguyen](https://arxiv.org/abs/2002.01336v1), a bidirectional LSTM with 3 layers and 100 units is used to classify the input (all tweets of one user) to bot, female or male.
 ## Training
-The model paremeters and number of dimensions can be specified in the main script that also starts training and plots the lost.
+The model paremeters and number of dimensions can be specified in the main script that also starts training and plots the loss.

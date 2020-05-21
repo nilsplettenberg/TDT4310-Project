@@ -130,4 +130,6 @@ dmypy.json
 
 # don't push datasets
 data/
-.vscode/settings.json
+checkpoints/
+.vscode/
+plots/

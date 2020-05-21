@@ -7,6 +7,7 @@ import os
 import sys
 import numpy as np
 from nltk.corpus import stopwords
+from tqdm import tqdm
 # from gensim.models import Word2Vec
 
 
@@ -150,7 +151,8 @@ def prepare_sequence(user_tweets, word_to_ix={}):
     # list of all sequences
     sequences = []
     # iterate over all users 
-    for tweets in user_tweets:
+    print("Prepare sequences")
+    for tweets in tqdm(user_tweets):
         # iterate over all tweets per user
         # one sequence contains all tweets of a user
         seq = [] 

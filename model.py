@@ -31,19 +31,20 @@ class Embedding_Model(nn.Module):
         self.word_embeddings = nn.Embedding(vocab_size, dim)
         self.lstm =  nn.LSTM(dim, lstm_units, num_layers=num_layers, bidirectional=True, batch_first=True)
         self.fc = nn.Sequential(
-            nn.Linear(lstm_units*2, classes)
-            # nn.Softmax(dim=1)
+            nn.Linear(lstm_units*2, classes),
+            nn.Softmax(dim=1)
         )
 
     def forward(self, x):
         x = self.word_embeddings(x)
-        x, _= self.lstm(x)
+        x, (h,c)= self.lstm(x)
         # # average pooling
         # avg_pool = torch.mean(x, 1)
-        # # max pooling
-        # max_pool, _ = torch.max(x,1)
+        # max pooling
+        x, _ = torch.max(x,1)
         # x = torch.cat((max_pool, avg_pool), 1)
         # x = self.fc(x)
-        x = x.transpose(0,1)
-        x = self.fc(x[-1])
+        # TODO check why ouput of lstm layer is always the same 
+        # x = x.transpose(0,1)
+        x = self.fc(x)
         return x

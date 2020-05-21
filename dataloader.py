@@ -88,23 +88,19 @@ def load_data(path = 'data/pan19-author-profiling-20200229/training/en/', num_cl
 def get_data_loader(datasets, batch_size: int, validation_fraction: float = 0.1, dimensions: int = 25
                  ) -> typing.List[torch.utils.data.DataLoader]:
 
-    x_train, y_train, x_test, y_test = datasets
+    x, y = datasets
 
-    # data_train = Dataset(x_train, y_train)
-    # data_test = Dataset(x_test, y_test)
     # # convert to torch tensor and transfer to gpu if possible
-    x_train = torch.tensor(x_train, dtype=torch.long)
-    y_train = torch.tensor(y_train)
-    x_test  = torch.tensor(x_test, dtype=torch.long)
-    y_test  = torch.tensor(y_test)
+    x = torch.tensor(x, dtype=torch.long)
+    y = torch.tensor(y)
 
 
-    data_train = data.TensorDataset(x_train, y_train)
-    data_test = data.TensorDataset(x_test, y_test)
+    data_train = data.TensorDataset(x, y)
+    # data_test = data.TensorDataset(x_test, y_test)
     
     
-    indices = list(range(len(x_train)))
-    split_idx = int(np.floor(validation_fraction * len(x_train)))
+    indices = list(range(len(x)))
+    split_idx = int(np.floor(validation_fraction * len(x)))
 
     val_indices = np.random.choice(indices, size=split_idx, replace=False)
     train_indices = list(set(indices) - set(val_indices))
@@ -123,10 +119,11 @@ def get_data_loader(datasets, batch_size: int, validation_fraction: float = 0.1,
                                                  batch_size=batch_size,
                                                  num_workers=1)
 
-    dataloader_test = torch.utils.data.DataLoader(data_test,
-                                                  batch_size=batch_size,
-                                                  shuffle=False,
-                                                  num_workers=1)
+    # dataloader_test = torch.utils.data.DataLoader(data_test,
+    #                                               batch_size=batch_size,
+    #                                               shuffle=False,
+    #                                               num_workers=1)
+    dataloader_test = None
 
-    return dataloader_train, dataloader_test, dataloader_val
+    return dataloader_train, dataloader_val, dataloader_test
     

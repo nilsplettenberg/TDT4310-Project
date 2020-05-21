@@ -124,11 +124,11 @@ class Trainer:
             f"Validation Accuracy: {validation_acc:.3f}",
             sep="\t")
         # Compute for testing set
-        test_loss, test_acc = compute_loss_and_accuracy(
-            self.dataloader_test, self.model, self.loss_criterion
-        )
-        self.TEST_ACC[self.global_step] = test_acc
-        self.TEST_LOSS[self.global_step] = test_loss
+        # test_loss, test_acc = compute_loss_and_accuracy(
+        #     self.dataloader_test, self.model, self.loss_criterion
+        # )
+        # self.TEST_ACC[self.global_step] = test_acc
+        # self.TEST_LOSS[self.global_step] = test_loss
 
         self.model.train()
 
@@ -215,12 +215,12 @@ class Trainer:
         validation_loss, validation_acc = compute_loss_and_accuracy(
             self.dataloader_val, self.model, self.loss_criterion
         )
-        test_loss, test_acc = compute_loss_and_accuracy(
-            self.dataloader_test, self.model, self.loss_criterion
-        )
+        # test_loss, test_acc = compute_loss_and_accuracy(
+        #     self.dataloader_test, self.model, self.loss_criterion
+        # )
         print(f"Final Training Loss: {train_loss:.2f}", f"Final Training accuracy: {train_acc:.3f}", sep="\t")
         print(f"Final Validation Loss: {validation_loss:.2f}", f"Final Validation accuracy: {validation_acc:.3f}", sep="\t")
-        print(f"Final Test Loss: {test_loss:.2f}", f"Final Test accuracy: {test_acc:.3f}", sep="\t")
+        # print(f"Final Test Loss: {test_loss:.2f}", f"Final Test accuracy: {test_acc:.3f}", sep="\t")
 
 def create_plots(trainer: Trainer, name: str):
     plot_path = pathlib.Path("plots")
@@ -231,12 +231,12 @@ def create_plots(trainer: Trainer, name: str):
     plt.title("Cross Entropy Loss")
     utils.plot_loss(trainer.TRAIN_LOSS, label="Training loss")
     utils.plot_loss(trainer.VALIDATION_LOSS, label="Validation loss")
-    utils.plot_loss(trainer.TEST_LOSS, label="Testing Loss")
+    # utils.plot_loss(trainer.TEST_LOSS, label="Testing Loss")
     plt.legend()
     plt.subplot(1, 2, 2)
     plt.title("Accuracy")
     utils.plot_loss(trainer.VALIDATION_ACC, label="Validation Accuracy")
-    utils.plot_loss(trainer.TEST_ACC, label="Testing Accuracy")
+    # utils.plot_loss(trainer.TEST_ACC, label="Testing Accuracy")
     plt.legend()
     plt.savefig(plot_path.joinpath(f"{name}_plot.png"))
     plt.show()

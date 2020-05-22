@@ -89,26 +89,28 @@ def loadGlove(dim=25):
     return glove_dict
 
 
-def embed_words(user_tweets, dim=25):
+def embed_words(user_tweets, labels, dim=25):
     print("Load embeddings for %i dimensions..." % (dim))
     # this might take a while for high dimensions
     glove_dict = loadGlove(dim)
 
     # list of all sequences
     embedded_words = []
+    y = [] 
     # iterate over all users 
-    for tweets in user_tweets:
+    for idx, tweets in enumerate(user_tweets):
         # iterate over all tweets per user
-        # one sequence contains all tweets of a user
-        seq = [] 
+        # one sequence contains all tweets of a user 
         for tweet in tweets:
+            seq = []
             tokens = tweet_tokenization(tweet)
             for token in tokens:
                 try:
                     seq.append(glove_dict[token])
                 except KeyError:
                     pass
-        embedded_words.append(seq)
+            embedded_words.append(seq)
+            y.append(labels[idx]) 
     
     return embedded_words
 
@@ -147,23 +149,25 @@ def get_word_to_ix(user_tweets, word_to_ix={}):
                     word_to_ix[token] = len(word_to_ix)+1
     return word_to_ix
 
-def prepare_sequence(user_tweets, word_to_ix={}):
+def prepare_sequence(user_tweets, labels, word_to_ix={},):
     # list of all sequences
     sequences = []
+    y =[] 
     # iterate over all users 
     print("Prepare sequences")
-    for tweets in tqdm(user_tweets):
+    for idx, tweets in tqdm(enumerate(user_tweets)):
         # iterate over all tweets per user
         # one sequence contains all tweets of a user
-        seq = [] 
         for tweet in tweets:
+            seq = [] 
             tokens = tweet_tokenization(tweet, True)
             for token in tokens:
                 if token not in word_to_ix:
                     word_to_ix[token] = len(word_to_ix)+1
                 seq.append(word_to_ix[token])
-        sequences.append(seq)
-    return sequences, word_to_ix
+            sequences.append(seq)
+            y.append(labels[idx]) 
+    return sequences, y, word_to_ix
 
 def preprocess(x, y, dimensions, glove = True):
     if glove:

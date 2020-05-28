@@ -28,6 +28,8 @@ class Embedding_Model(nn.Module):
     def __init__(self, dim, vocab_size, classes, lstm_units=100, num_layers=3, bidirectional=True):
         super(Embedding_Model, self).__init__()
 
+        self.num_classes = classes
+
         self.word_embeddings = nn.Embedding(vocab_size, dim)
         self.lstm =  nn.LSTM(dim, lstm_units, num_layers=num_layers, bidirectional=bidirectional, batch_first=True)
         self.fc = nn.Sequential(
@@ -35,7 +37,8 @@ class Embedding_Model(nn.Module):
         )
 
     def forward(self, x):
-        x = self.word_embeddings(x)
+        # only use sequence for prediction, discard user id
+        x = self.word_embeddings(x[:,:-1])
         x, (h,c)= self.lstm(x)
         # # # average pooling
         # avg_pool = torch.mean(x, 1)
@@ -43,7 +46,6 @@ class Embedding_Model(nn.Module):
         # max_pool, _ = torch.max(x,1)
         # x = torch.cat((max_pool, avg_pool), 1)
         # x = self.fc(x)
-        # # TODO check why ouput of lstm layer is always the same 
         x = x.transpose(0,1)
         x = self.fc(x[-1])
         return x

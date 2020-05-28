@@ -8,6 +8,36 @@ import collections
 import numpy as np
 from torch import nn
 
+def compute_precision(tp, tn, fp,fn):
+    for idx, c in enumerate(["bot", "female", "male"]):          
+        try:
+            p = tp[idx]/(tp[idx]+fp[idx])
+        except ZeroDivisionError:
+            p = 0
+        try:
+            r = tp[idx]/(tp[idx]+fn[idx]) 
+        except ZeroDivisionError:
+            r = 0
+        try:
+            a = (tp[idx]+tn[idx])/(tp[idx]+fp[idx]+tn[idx]+fn[idx])
+        except ZeroDivisionError:
+            a = 0
+        print("Class %6s: precision: %.3f, recall:%.3f, accuracy:%.3f" % (c,p,r,a))
+    return p, r, a
+
+def compute_precision_users(user_stats: dict, threshold = 0.5):
+    """
+        Computes precision, recall and accuracy based on all tweets of a user
+    """
+    correct = 0
+    for user, stats in user_stats.items():
+        pred = np.argmax(stats[:-1])
+        label = stats[-1] 
+        confidence = max(stats[:-1])/sum(stats[:-1])
+        if label == pred and confidence > threshold:
+            correct +=1
+    a = correct / len(user_stats)
+    print("Accuracy for users: %.3f" % a)
 
 def compute_loss_and_accuracy(
         dataloader: torch.utils.data.DataLoader,
@@ -29,8 +59,17 @@ def compute_loss_and_accuracy(
     loss = []
     correct = 0
     total = 0
+    # num_classes = model.num_classes
+    num_classes = 3
 
     with torch.no_grad():
+        # true positives, false positives, true negatives, false negatives for all classes
+        tp =[0,0,0]
+        fp =[0,0,0]
+        tn =[0,0,0]
+        fn =[0,0,0]
+        # save stats per user
+        user_stats = {}
         for (X_batch, Y_batch) in dataloader:
             # Transfer images/labels to GPU VRAM, if possible
             X_batch = utils.to_cuda(X_batch)
@@ -46,6 +85,28 @@ def compute_loss_and_accuracy(
             total += Y_batch.size(0)
             correct += (predicted == Y_batch).sum().item()
 
+            user_ids = X_batch[:,-1]
+            #compute precision, recall a accuracy per class
+            # only works for 3 classes
+            for idx, prediction in enumerate(predicted):
+                p = int(prediction)
+                y = int(Y_batch[idx])
+                user_id = int(user_ids[idx])
+                if p == y:
+                    tp[p] += 1
+                    tn[p-1] += 1
+                    tn[p-2] += 1
+                else:
+                    fn[y] += 1
+                    fp[p] += 1
+                    tn[-p-y] += 1
+                try:
+                    user_stats[user_id][prediction] +=1
+                except KeyError:
+                    user_stats[user_id] = [0,0,0,y] 
+                    user_stats[user_id][prediction] +=1
+    compute_precision(tp, tn, fp, fn)
+    compute_precision_users(user_stats)
     average_loss = np.mean(loss)
     accuracy = 100 * correct / total
     return average_loss, accuracy

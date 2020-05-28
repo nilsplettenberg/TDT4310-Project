@@ -115,7 +115,7 @@ def embed_words(user_tweets, labels, dim=25):
     return embedded_words
 
 def zero_pad(embedded_words, labels):
-    lengths = [len(seq) for seq in embedded_words]
+    lengths = [len(seq[0]) for seq in embedded_words]
     max_len = max(lengths)
     min_len = min(lengths)
     median = np.median(lengths)
@@ -123,19 +123,21 @@ def zero_pad(embedded_words, labels):
     std = np.std(lengths)
     print("Stats for sequence lengths: min=%i, max=%i, mean=%i, median=%i, std=%i" % (min_len, max_len, mean, median, std))
     try:
-        dim = len(embedded_words[0][0])
+        dim = len(embedded_words[0][0][0])
     except TypeError:
         dim = 1
     padded = []
     labels_new = []
     for idx, seq in enumerate(embedded_words):
-        if not( len(seq) < median - std  or len(seq) > median + std):
-            for i in range(int(median) + int(std)-len(seq)):
+        if not( len(seq[0]) < median - std  or len(seq[0]) > median + std):
+            for i in range(int(median) + int(std)-len(seq[0])):
                 if dim ==1:
-                    seq.append(0)
+                    seq[0].append(0)
                 else:
-                    seq.append(np.zeros(dim))
-            padded.append(seq)
+                    seq[0].append(np.zeros(dim))
+            # add id at the end of the sequence
+            seq[0].append(seq[1]) 
+            padded.append(seq[0])
             labels_new.append(labels[idx])
     print("Original length:%d, trimmed length:%d" % (len(embedded_words), len(padded)))
     return padded, labels_new
@@ -165,7 +167,8 @@ def prepare_sequence(user_tweets, labels, word_to_ix={},):
                 if token not in word_to_ix:
                     word_to_ix[token] = len(word_to_ix)+1
                 seq.append(word_to_ix[token])
-            sequences.append(seq)
+            # tuple with word index and index in dataset to identify user
+            sequences.append((seq, idx))
             y.append(labels[idx]) 
     return sequences, y, word_to_ix
 

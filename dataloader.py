@@ -74,10 +74,12 @@ def load_data(path = 'data/pan19-author-profiling-20200229/training/en/', num_cl
     x, y =([] for i in range(2))
 
     # torch needs integer as output class
-    if num_classes==3:
-        class_lables = {"bot":0, "female":1, "male":2}
-    else:
-        class_lables = {"bot":0, "female":1, "male":1}
+    # if num_classes==3:
+    #     class_lables = {"bot":0, "female":1, "male":2}
+    # else:
+    #     class_lables = {"bot":0, "female":1, "male":1}
+    class_lables = {"bot":0, "female":1, "male":2}
+
 
     for key, value in tweets.items():
         x.append(value)
@@ -88,19 +90,23 @@ def load_data(path = 'data/pan19-author-profiling-20200229/training/en/', num_cl
 def get_data_loader(datasets, batch_size: int, validation_fraction: float = 0.1, dimensions: int = 25
                  ) -> typing.List[torch.utils.data.DataLoader]:
 
-    x, y = datasets
+    x, y= datasets
 
     # # convert to torch tensor and transfer to gpu if possible
     x = torch.tensor(x, dtype=torch.long)
     y = torch.tensor(y)
 
+    # split into train and test set, 0.9/0.1
+    test_ind = int(len(x)*0.9) 
+    x_test, y_test = x[test_ind:],y[test_ind:]
+    x_train,y_train = x[:test_ind], y[:test_ind]
 
-    data_train = data.TensorDataset(x, y)
-    # data_test = data.TensorDataset(x_test, y_test)
+    data_train = data.TensorDataset(x_train, y_train)
+    data_test = data.TensorDataset(x_test, y_test)
     
-    
-    indices = list(range(len(x)))
-    split_idx = int(np.floor(validation_fraction * len(x)))
+    # split train into train and validation
+    indices = list(range(len(x_test)))
+    split_idx = int(np.floor(validation_fraction * len(x_test)))
 
     val_indices = np.random.choice(indices, size=split_idx, replace=False)
     train_indices = list(set(indices) - set(val_indices))
@@ -119,11 +125,11 @@ def get_data_loader(datasets, batch_size: int, validation_fraction: float = 0.1,
                                                  batch_size=batch_size,
                                                  num_workers=1)
 
-    # dataloader_test = torch.utils.data.DataLoader(data_test,
-    #                                               batch_size=batch_size,
-    #                                               shuffle=False,
-    #                                               num_workers=1)
-    dataloader_test = None
+    dataloader_test = torch.utils.data.DataLoader(data_test,
+                                                  batch_size=batch_size,
+                                                  shuffle=False,
+                                                  num_workers=1)
+    # dataloader_test = None
 
     return dataloader_train, dataloader_val, dataloader_test
     

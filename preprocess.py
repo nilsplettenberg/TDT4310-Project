@@ -42,7 +42,7 @@ def download_glove():
     os.remove("data/glove.twitter.27B.zip")
 
 
-def tweet_tokenization(tweet, remove_stopwords = False):
+def tweet_tokenization(tweet, remove_stopwords = False, lang = "en"):
     # tag special expressions
     tagged = re.sub(r'(?:@[\w_]+)', "<USER>", tweet) # @-mentions
     tagged = re.sub(r'(?:\#+[\w_]+[\w\'_\-]*[\w_]+)', "<HASHTAG>", tagged) # hash-tags
@@ -61,7 +61,10 @@ def tweet_tokenization(tweet, remove_stopwords = False):
         r'(?:\S)' #anything else
     ]
     tokens_re = re.compile(r'('+'|'.join(regex_str)+ ')', re.VERBOSE | re.IGNORECASE)
-    stop_word = set(stopwords.words('english'))
+    if lang == "en":
+        stop_word = set(stopwords.words('english'))
+    else:
+        stop_word = set(stopwords.words('spanish'))
     word_tokens = tokens_re.findall(tagged)
 
 
@@ -121,7 +124,7 @@ def zero_pad(embedded_words, labels):
     median = np.median(lengths)
     mean = np.mean(lengths)
     std = np.std(lengths)
-    print("Stats for sequence lengths: min=%i, max=%i, mean=%i, median=%i, std=%i" % (min_len, max_len, mean, median, std))
+    print("Stats for sequence lengths: min=%i, max=%i, mean=%.2f, median=%i, std=%.2f" % (min_len, max_len, mean, median, std))
     try:
         dim = len(embedded_words[0][0][0])
     except TypeError:
@@ -151,7 +154,7 @@ def get_word_to_ix(user_tweets, word_to_ix={}):
                     word_to_ix[token] = len(word_to_ix)+1
     return word_to_ix
 
-def prepare_sequence(user_tweets, labels, word_to_ix={},):
+def prepare_sequence(user_tweets, labels, word_to_ix={},lang = "en"):
     # list of all sequences
     sequences = []
     y =[] 
@@ -162,7 +165,7 @@ def prepare_sequence(user_tweets, labels, word_to_ix={},):
         # one sequence contains all tweets of a user
         for tweet in tweets:
             seq = [] 
-            tokens = tweet_tokenization(tweet, True)
+            tokens = tweet_tokenization(tweet, True, lang)
             for token in tokens:
                 if token not in word_to_ix:
                     word_to_ix[token] = len(word_to_ix)+1

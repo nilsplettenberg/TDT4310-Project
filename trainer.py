@@ -9,6 +9,10 @@ import numpy as np
 from torch import nn
 
 def compute_precision(tp, tn, fp,fn):
+    """
+        Returns:
+            (precision, recall, accuracy)
+    """
     for idx, c in enumerate(["bot", "female", "male"]):          
         try:
             p = tp[idx]/(tp[idx]+fp[idx])
@@ -29,15 +33,29 @@ def compute_precision_users(user_stats: dict, threshold = 0.5):
     """
         Computes precision, recall and accuracy based on all tweets of a user
     """
+    # true positives, false positives, true negatives, false negatives for all classes
+    tp =[0,0,0]
+    fp =[0,0,0]
+    tn =[0,0,0]
+    fn =[0,0,0]
     correct = 0
     for user, stats in user_stats.items():
-        pred = np.argmax(stats[:-1])
-        label = stats[-1] 
+        p = np.argmax(stats[:-1])
+        y = stats[-1] 
         confidence = max(stats[:-1])/sum(stats[:-1])
-        if label == pred and confidence > threshold:
-            correct +=1
+        # if label == pred and confidence > threshold:
+        #     correct +=1
+        if p == y:
+            tp[p] += 1
+            tn[p-1] += 1
+            tn[p-2] += 1
+        else:
+            fn[y] += 1
+            fp[p] += 1
+            tn[-p-y] += 1
     a = correct / len(user_stats)
     print("Accuracy for users: %.3f" % a)
+    compute_precision(tp, tn, fp, fn)
 
 def compute_loss_and_accuracy(
         dataloader: torch.utils.data.DataLoader,
@@ -59,8 +77,7 @@ def compute_loss_and_accuracy(
     loss = []
     correct = 0
     total = 0
-    # num_classes = model.num_classes
-    num_classes = 3
+    num_classes = model.num_classes
 
     with torch.no_grad():
         # true positives, false positives, true negatives, false negatives for all classes
@@ -185,11 +202,11 @@ class Trainer:
             f"Validation Accuracy: {validation_acc:.3f}",
             sep="\t")
         # Compute for testing set
-        # test_loss, test_acc = compute_loss_and_accuracy(
-        #     self.dataloader_test, self.model, self.loss_criterion
-        # )
-        # self.TEST_ACC[self.global_step] = test_acc
-        # self.TEST_LOSS[self.global_step] = test_loss
+        test_loss, test_acc = compute_loss_and_accuracy(
+            self.dataloader_test, self.model, self.loss_criterion
+        )
+        self.TEST_ACC[self.global_step] = test_acc
+        self.TEST_LOSS[self.global_step] = test_loss
 
         self.model.train()
 
@@ -276,12 +293,12 @@ class Trainer:
         validation_loss, validation_acc = compute_loss_and_accuracy(
             self.dataloader_val, self.model, self.loss_criterion
         )
-        # test_loss, test_acc = compute_loss_and_accuracy(
-        #     self.dataloader_test, self.model, self.loss_criterion
-        # )
+        test_loss, test_acc = compute_loss_and_accuracy(
+            self.dataloader_test, self.model, self.loss_criterion
+        )
         print(f"Final Training Loss: {train_loss:.2f}", f"Final Training accuracy: {train_acc:.3f}", sep="\t")
         print(f"Final Validation Loss: {validation_loss:.2f}", f"Final Validation accuracy: {validation_acc:.3f}", sep="\t")
-        # print(f"Final Test Loss: {test_loss:.2f}", f"Final Test accuracy: {test_acc:.3f}", sep="\t")
+        print(f"Final Test Loss: {test_loss:.2f}", f"Final Test accuracy: {test_acc:.3f}", sep="\t")
 
 def create_plots(trainer: Trainer, name: str):
     plot_path = pathlib.Path("plots")
@@ -292,12 +309,12 @@ def create_plots(trainer: Trainer, name: str):
     plt.title("Cross Entropy Loss")
     utils.plot_loss(trainer.TRAIN_LOSS, label="Training loss")
     utils.plot_loss(trainer.VALIDATION_LOSS, label="Validation loss")
-    # utils.plot_loss(trainer.TEST_LOSS, label="Testing Loss")
+    utils.plot_loss(trainer.TEST_LOSS, label="Testing Loss")
     plt.legend()
     plt.subplot(1, 2, 2)
     plt.title("Accuracy")
     utils.plot_loss(trainer.VALIDATION_ACC, label="Validation Accuracy")
-    # utils.plot_loss(trainer.TEST_ACC, label="Testing Accuracy")
+    utils.plot_loss(trainer.TEST_ACC, label="Testing Accuracy")
     plt.legend()
     plt.savefig(plot_path.joinpath(f"{name}_plot.png"))
     plt.show()

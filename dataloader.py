@@ -92,8 +92,13 @@ def get_data_loader(datasets, batch_size: int, validation_fraction: float = 0.1,
 
     x, y= datasets
 
-    # # convert to torch tensor and transfer to gpu if possible
-    x = torch.tensor(x, dtype=torch.long)
+    # # convert to torch tensor according to model type
+    if type(x[0][0]) == list:
+        # lstm requires float vectors
+        x = torch.tensor(x, dtype=torch.float)
+    else:
+        # embedding layer requires long 
+        x = torch.tensor(x, dtype=torch.long)
     y = torch.tensor(y)
 
     # split into train and test set, 0.9/0.1

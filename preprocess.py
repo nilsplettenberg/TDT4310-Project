@@ -72,7 +72,7 @@ def tweet_tokenization(tweet, remove_stopwords = False, lang = "en"):
     if remove_stopwords:
         return [w.lower() for w in word_tokens if (w.isalpha() or w[0]=="<") and len(w) > 1 and not w.lower() in stop_word and w != "RT"]
     else:
-        return word_tokens
+        return [w.lower() for w in word_tokens]
 
 # https://radimrehurek.com/gensim/models/word2vec.html
 
@@ -84,8 +84,9 @@ def loadGlove(dim=25):
     if not pathlib.Path(filename).is_file():
         download_glove()
     glove_dict = {}
+    print("Load GloVe dict from file...")
     with open (filename,  encoding="utf8") as f:
-        for line in f:
+        for line in tqdm(f):
             word = line.split()[0]
             vec = [float(val) for val in line.split()[1:]]
             glove_dict[word] = vec
@@ -100,8 +101,9 @@ def embed_words(user_tweets, labels, dim=25):
     # list of all sequences
     embedded_words = []
     y = [] 
-    # iterate over all users 
-    for idx, tweets in enumerate(user_tweets):
+    # iterate over all users
+    print("Embed %d users..." % (len(user_tweets))) 
+    for idx, tweets in tqdm(enumerate(user_tweets)):
         # iterate over all tweets per user
         # one sequence contains all tweets of a user 
         for tweet in tweets:
@@ -112,10 +114,11 @@ def embed_words(user_tweets, labels, dim=25):
                     seq.append(glove_dict[token])
                 except KeyError:
                     pass
-            embedded_words.append(seq)
+            # append tuple of sequence and user ID
+            embedded_words.append((seq, idx))
             y.append(labels[idx]) 
     
-    return embedded_words
+    return embedded_words, y
 
 def zero_pad(embedded_words, labels):
     lengths = [len(seq[0]) for seq in embedded_words]
@@ -139,20 +142,14 @@ def zero_pad(embedded_words, labels):
                 else:
                     seq[0].append(np.zeros(dim))
             # add id at the end of the sequence
-            seq[0].append(seq[1]) 
+            if dim ==1:
+                seq[0].append(seq[1])
+            else:
+                seq[0].append(np.zeros(dim)+seq[1])
             padded.append(seq[0])
             labels_new.append(labels[idx])
     print("Original length:%d, trimmed length:%d" % (len(embedded_words), len(padded)))
     return padded, labels_new
-
-def get_word_to_ix(user_tweets, word_to_ix={}):
-    for tweets in user_tweets:
-        for tweet in tweets:
-            tokens = tweet_tokenization(tweet, True)
-            for token in tokens:
-                if token not in word_to_ix:
-                    word_to_ix[token] = len(word_to_ix)+1
-    return word_to_ix
 
 def prepare_sequence(user_tweets, labels, word_to_ix={},lang = "en"):
     # list of all sequences
@@ -165,7 +162,7 @@ def prepare_sequence(user_tweets, labels, word_to_ix={},lang = "en"):
         # one sequence contains all tweets of a user
         for tweet in tweets:
             seq = [] 
-            tokens = tweet_tokenization(tweet, True, lang)
+            tokens = tweet_tokenization(tweet, False, lang)
             for token in tokens:
                 if token not in word_to_ix:
                     word_to_ix[token] = len(word_to_ix)+1
@@ -175,15 +172,14 @@ def prepare_sequence(user_tweets, labels, word_to_ix={},lang = "en"):
             y.append(labels[idx]) 
     return sequences, y, word_to_ix
 
-def preprocess(x, y, dimensions, glove = True):
+def preprocess(x, y, dimensions, lang = "en", glove = True):
+    word_to_ix = None
     if glove:
         # embedd words using glove matrix
-        x= embed_words(x,dimensions)
+        x,y = embed_words(x, y, dimensions)
     else:
-        # TODO add words from test set
-        word_to_ix = get_word_to_ix(x)
-        x = prepare_sequence(x, word_to_ix)
+        x,y, word_to_ix = prepare_sequence(x, y, lang= lang)
     
     # remove too short and too long sequences, padd with zeros 
     x,y = zero_pad(x,y)
-    return x,y
+    return x,y, word_to_ix

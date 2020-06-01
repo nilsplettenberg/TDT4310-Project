@@ -5,7 +5,7 @@ from torch.nn import functional as F
 import pickle
 
 from dataloader import load_data, get_data_loader
-from model import Test_model, Embedding_Model
+from model import Glove_model, Embedding_Model
 from trainer import Trainer, create_plots
 from preprocess import preprocess, prepare_sequence, zero_pad
 
@@ -31,22 +31,19 @@ if __name__ == "__main__":
     early_stop_count = 5
     dimensions = 200
     num_classes = 3
-    detect_gender = True # if false and 2 classes: detect bot/human
-    lang = "es" # es or en 
+    detect_gender = False # if false and 2 classes: detect bot/human
+    lang = "en" # es or en
+    use_glove = True
 
+    # load datasets
     x_train, y_train = load_data("data/pan19-author-profiling-20200229/training/"+ lang +"/", num_classes)
     x_test, y_test = load_data("data/pan19-author-profiling-20200229/test/"+ lang +"/", num_classes)
-    
-    # # x_train, y_train = preprocess(x_train, y_train, dimensions)
-    # # x_test, y_test = preprocess(x_test, y_test, dimensions)
 
-    # without glove
     # concatenate sets for preprocessing
     x = x_train + x_test
     y = y_train + y_test
 
     # # relable dataset for binary detection
-    # x,y = datasets
     if detect_gender:
         if num_classes == 2:
             x,y = remove_bot(x,y)
@@ -55,26 +52,24 @@ if __name__ == "__main__":
             # mapping 2 to 1 to have a binary output for only 2 classes
             y = list(map(map_binary, y))
 
-    x, y, word_to_ix = prepare_sequence(x, y, lang=lang)
-    x, y = zero_pad(x,y)
+    x, y, word_to_ix = preprocess(x, y, dimensions, lang=lang, glove=use_glove)
 
-    # x_test, word_to_ix = prepare_sequence(x_test, word_to_ix)
-    # x_test, y_test = zero_pad(x_test,y_test)
-    # datasets = (x_train, y_train, x_test, y_test)
     datasets = (x,y)
-    # Saving the objects:
-    with open('/work/nilsple/data/preprocessed_single_tweets_id_'+ lang +'.pkl', 'wb') as f: 
-        pickle.dump((datasets, word_to_ix), f)
+    # # Saving the objects:
+    # with open('/work/nilsple/data/preprocessed_nostop_gender'+ lang +'.pkl', 'wb') as f: 
+    #     pickle.dump((datasets, word_to_ix), f)
 
-    # Getting preprocessed datasets
-    with open('/work/nilsple/data/preprocessed_single_tweets_id_'+ lang +'.pkl', 'rb') as f:
-        datasets, word_to_ix = pickle.load(f)
+    # # Getting preprocessed datasets
+    # with open('/work/nilsple/data/preprocessed_nostop_gender'+ lang +'.pkl', 'rb') as f:
+    #     datasets, word_to_ix = pickle.load(f)
 
-    
+    # x,y = datasets
+
     dataloaders = get_data_loader(datasets, batch_size, dimensions = dimensions)
-    del datasets
-    # model = Test_model(dimensions,num_classes, 100, 3)
-    model = Embedding_Model(dimensions, len(word_to_ix),num_classes, 200, 2, True) # num layers was 1
+    if use_glove:
+        model = Glove_model(dimensions,num_classes, 200, 2, True)
+    else:
+        model = Embedding_Model(dimensions, len(word_to_ix),num_classes, 200, 2, True) # num layers was 1
     trainer = Trainer(
             batch_size,
             learning_rate,
@@ -85,4 +80,4 @@ if __name__ == "__main__":
         )
     trainer.train()
     trainer.report_final_loss()
-    create_plots(trainer, "3_class_spanish")
+    create_plots(trainer, "3_class_english")

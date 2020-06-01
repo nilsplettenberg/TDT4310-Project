@@ -2,24 +2,20 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-class Test_model(nn.Module):
-    def __init__(self, input_dim, classes, lstm_units=100, num_layers=3):
-        super(Test_model, self).__init__()
+class Glove_model(nn.Module):
+    def __init__(self, dim, classes, lstm_units=200, num_layers=2, bidirectional=True):
+        super(Glove_model, self).__init__()
 
-        self.lstm =  nn.LSTM(input_dim, lstm_units, num_layers=num_layers, bidirectional=True, batch_first=True)
+        self.num_classes = classes
+
+        self.lstm =  nn.LSTM(dim, lstm_units, num_layers=num_layers, bidirectional=bidirectional, batch_first=True)
         self.fc = nn.Sequential(
-            nn.Linear(lstm_units*2, classes)
-            # nn.Softmax(dim=1)
+            nn.Linear(lstm_units*(1+int(bidirectional)), classes)
         )
 
     def forward(self, x):
-        x, _= self.lstm(x)
-        # # average pooling
-        # avg_pool = torch.mean(x, 1)
-        # # max pooling
-        # max_pool, _ = torch.max(x,1)
-        # x = torch.cat((max_pool, avg_pool), 1)
-        # x = self.fc(x)
+        # only use sequence for prediction, discard user id
+        x, (h,c)= self.lstm(x[:,:-1])
         x = x.transpose(0,1)
         x = self.fc(x[-1])
         return x

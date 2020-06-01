@@ -38,13 +38,10 @@ def compute_precision_users(user_stats: dict, threshold = 0.5):
     fp =[0,0,0]
     tn =[0,0,0]
     fn =[0,0,0]
-    correct = 0
     for user, stats in user_stats.items():
         p = np.argmax(stats[:-1])
         y = stats[-1] 
         confidence = max(stats[:-1])/sum(stats[:-1])
-        # if label == pred and confidence > threshold:
-        #     correct +=1
         if p == y:
             tp[p] += 1
             tn[p-1] += 1
@@ -53,7 +50,7 @@ def compute_precision_users(user_stats: dict, threshold = 0.5):
             fn[y] += 1
             fp[p] += 1
             tn[-p-y] += 1
-    a = correct / len(user_stats)
+    a = sum(tp) / len(user_stats)
     print("Accuracy for users: %.3f" % a)
     compute_precision(tp, tn, fp, fn)
 
@@ -108,7 +105,7 @@ def compute_loss_and_accuracy(
             for idx, prediction in enumerate(predicted):
                 p = int(prediction)
                 y = int(Y_batch[idx])
-                user_id = int(user_ids[idx])
+                user_id = int(torch.mean(user_ids[idx]))
                 if p == y:
                     tp[p] += 1
                     tn[p-1] += 1

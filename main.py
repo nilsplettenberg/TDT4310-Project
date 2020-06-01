@@ -33,7 +33,7 @@ if __name__ == "__main__":
     num_classes = 3
     detect_gender = False # if false and 2 classes: detect bot/human
     lang = "en" # es or en
-    use_glove = True
+    use_glove = False
 
     # load datasets
     x_train, y_train = load_data("data/pan19-author-profiling-20200229/training/"+ lang +"/", num_classes)
@@ -62,8 +62,6 @@ if __name__ == "__main__":
     # # Getting preprocessed datasets
     # with open('/work/nilsple/data/preprocessed_nostop_gender'+ lang +'.pkl', 'rb') as f:
     #     datasets, word_to_ix = pickle.load(f)
-
-    # x,y = datasets
 
     dataloaders = get_data_loader(datasets, batch_size, dimensions = dimensions)
     if use_glove:

@@ -99,7 +99,8 @@ def compute_loss_and_accuracy(
             total += Y_batch.size(0)
             correct += (predicted == Y_batch).sum().item()
 
-            user_ids = X_batch[:,-1]
+            # mean requires float
+            user_ids = torch.tensor(X_batch[:,-1], dtype=torch.float)
             #compute precision, recall a accuracy per class
             # only works for 3 classes
             for idx, prediction in enumerate(predicted):

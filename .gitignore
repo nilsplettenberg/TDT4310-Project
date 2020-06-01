@@ -133,3 +133,4 @@ data/
 checkpoints/
 .vscode/
 plots/
+.vscode/settings.json
